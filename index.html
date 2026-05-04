@@ -1,0 +1,484 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Plexur — The Intelligence Layer Beneath Enterprise Platforms</title>
+    <meta name="description" content="Know the impact of every change before you make it. Deterministic blast-radius analysis for Salesforce, powered by code-level parsing — not metadata guesses.">
+    <meta property="og:title" content="Plexur — Know What Breaks Before You Change It">
+    <meta property="og:description" content="The intelligence layer beneath enterprise platforms. Deterministic blast-radius analysis for Salesforce.">
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://plexur.ai">
+    <link rel="canonical" href="https://plexur.ai">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-primary: #0a0e1a;
+            --bg-secondary: #111827;
+            --bg-card: #1a1f35;
+            --bg-card-hover: #222845;
+            --accent: #6366f1;
+            --accent-glow: rgba(99, 102, 241, 0.15);
+            --accent-bright: #818cf8;
+            --text-primary: #f1f5f9;
+            --text-secondary: #94a3b8;
+            --text-muted: #64748b;
+            --border: rgba(99, 102, 241, 0.12);
+            --border-hover: rgba(99, 102, 241, 0.3);
+            --critical: #ef4444;
+            --success: #22c55e;
+            --warning: #f59e0b;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'DM Sans', sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            min-height: 100vh;
+            overflow-x: hidden;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        /* ── Animated background ── */
+        .bg-grid {
+            position: fixed;
+            inset: 0;
+            z-index: 0;
+            overflow: hidden;
+        }
+        .bg-grid::before {
+            content: '';
+            position: absolute;
+            inset: -50%;
+            background-image:
+                linear-gradient(rgba(99, 102, 241, 0.03) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(99, 102, 241, 0.03) 1px, transparent 1px);
+            background-size: 60px 60px;
+            animation: gridDrift 30s linear infinite;
+        }
+        .bg-grid::after {
+            content: '';
+            position: absolute;
+            top: -30%;
+            left: 50%;
+            width: 800px;
+            height: 800px;
+            transform: translateX(-50%);
+            background: radial-gradient(circle, rgba(99, 102, 241, 0.08) 0%, transparent 60%);
+            animation: pulseGlow 8s ease-in-out infinite;
+        }
+        @keyframes gridDrift {
+            0% { transform: translate(0, 0); }
+            100% { transform: translate(60px, 60px); }
+        }
+        @keyframes pulseGlow {
+            0%, 100% { opacity: 0.4; transform: translateX(-50%) scale(1); }
+            50% { opacity: 0.8; transform: translateX(-50%) scale(1.1); }
+        }
+
+        /* ── Layout ── */
+        .page { position: relative; z-index: 1; }
+
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 0 24px;
+        }
+
+        /* ── Nav ── */
+        nav {
+            padding: 28px 0;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        .logo {
+            font-size: 22px;
+            font-weight: 700;
+            letter-spacing: -0.5px;
+            color: var(--text-primary);
+        }
+        .logo-dot {
+            display: inline-block;
+            width: 8px;
+            height: 8px;
+            background: var(--accent);
+            border-radius: 50%;
+            margin-left: 2px;
+            vertical-align: middle;
+            box-shadow: 0 0 12px var(--accent);
+        }
+        .nav-badge {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 11px;
+            font-weight: 500;
+            color: var(--accent-bright);
+            background: var(--accent-glow);
+            border: 1px solid var(--border);
+            padding: 5px 12px;
+            border-radius: 20px;
+            letter-spacing: 0.5px;
+        }
+
+        /* ── Hero ── */
+        .hero {
+            padding: 100px 0 60px;
+            text-align: center;
+        }
+        .hero-overline {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 12px;
+            font-weight: 500;
+            color: var(--accent-bright);
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            margin-bottom: 24px;
+            opacity: 0;
+            animation: fadeUp 0.6s ease-out 0.2s forwards;
+        }
+        .hero h1 {
+            font-size: clamp(36px, 5.5vw, 60px);
+            font-weight: 700;
+            line-height: 1.1;
+            letter-spacing: -1.5px;
+            margin-bottom: 24px;
+            opacity: 0;
+            animation: fadeUp 0.6s ease-out 0.4s forwards;
+        }
+        .hero h1 .accent {
+            background: linear-gradient(135deg, var(--accent-bright), #a78bfa);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        .hero-sub {
+            font-size: clamp(17px, 2vw, 20px);
+            color: var(--text-secondary);
+            line-height: 1.6;
+            max-width: 600px;
+            margin: 0 auto 48px;
+            opacity: 0;
+            animation: fadeUp 0.6s ease-out 0.6s forwards;
+        }
+
+        @keyframes fadeUp {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* ── Signal cards ── */
+        .signals {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 16px;
+            margin-bottom: 72px;
+            opacity: 0;
+            animation: fadeUp 0.6s ease-out 0.8s forwards;
+        }
+        .signal-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 28px 24px;
+            transition: all 0.3s ease;
+        }
+        .signal-card:hover {
+            background: var(--bg-card-hover);
+            border-color: var(--border-hover);
+            transform: translateY(-2px);
+        }
+        .signal-icon {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 13px;
+            font-weight: 500;
+            display: inline-block;
+            padding: 4px 10px;
+            border-radius: 6px;
+            margin-bottom: 16px;
+        }
+        .signal-icon.parse { color: var(--success); background: rgba(34, 197, 94, 0.1); }
+        .signal-icon.graph { color: var(--accent-bright); background: var(--accent-glow); }
+        .signal-icon.blast { color: var(--critical); background: rgba(239, 68, 68, 0.1); }
+        .signal-card h3 {
+            font-size: 16px;
+            font-weight: 600;
+            margin-bottom: 8px;
+            letter-spacing: -0.3px;
+        }
+        .signal-card p {
+            font-size: 14px;
+            color: var(--text-secondary);
+            line-height: 1.55;
+        }
+
+        /* ── Terminal block ── */
+        .terminal-section {
+            margin-bottom: 72px;
+            opacity: 0;
+            animation: fadeUp 0.6s ease-out 1s forwards;
+        }
+        .terminal {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            overflow: hidden;
+        }
+        .terminal-bar {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 14px 20px;
+            border-bottom: 1px solid var(--border);
+        }
+        .terminal-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+        }
+        .terminal-dot.r { background: #ef4444; }
+        .terminal-dot.y { background: #f59e0b; }
+        .terminal-dot.g { background: #22c55e; }
+        .terminal-title {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 12px;
+            color: var(--text-muted);
+            margin-left: 8px;
+        }
+        .terminal-body {
+            padding: 24px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 13px;
+            line-height: 2;
+        }
+        .terminal-body .prompt { color: var(--accent-bright); }
+        .terminal-body .cmd { color: var(--text-primary); }
+        .terminal-body .comment { color: var(--text-muted); }
+        .terminal-body .result { color: var(--success); }
+        .terminal-body .result-warn { color: var(--warning); }
+        .terminal-body .result-crit { color: var(--critical); }
+
+        /* ── Surfaces ── */
+        .surfaces {
+            text-align: center;
+            margin-bottom: 72px;
+            opacity: 0;
+            animation: fadeUp 0.6s ease-out 1.1s forwards;
+        }
+        .surfaces h2 {
+            font-size: 14px;
+            font-weight: 500;
+            color: var(--text-muted);
+            letter-spacing: 1.5px;
+            text-transform: uppercase;
+            margin-bottom: 28px;
+        }
+        .surface-row {
+            display: flex;
+            justify-content: center;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+        .surface-tag {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 13px;
+            color: var(--text-secondary);
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            padding: 10px 20px;
+            border-radius: 8px;
+            transition: all 0.2s;
+        }
+        .surface-tag:hover {
+            border-color: var(--border-hover);
+            color: var(--text-primary);
+        }
+
+        /* ── CTA / Launch ── */
+        .launch {
+            text-align: center;
+            padding: 60px 0 100px;
+            opacity: 0;
+            animation: fadeUp 0.6s ease-out 1.2s forwards;
+        }
+        .launch-date {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 14px;
+            color: var(--accent-bright);
+            margin-bottom: 16px;
+            letter-spacing: 0.5px;
+        }
+        .launch h2 {
+            font-size: clamp(24px, 3vw, 32px);
+            font-weight: 600;
+            letter-spacing: -0.5px;
+            margin-bottom: 12px;
+        }
+        .launch p {
+            font-size: 15px;
+            color: var(--text-secondary);
+            margin-bottom: 32px;
+        }
+        .launch-contact {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 14px;
+            color: var(--accent-bright);
+            background: var(--accent-glow);
+            border: 1px solid var(--border);
+            padding: 14px 28px;
+            border-radius: 10px;
+            text-decoration: none;
+            transition: all 0.3s;
+        }
+        .launch-contact:hover {
+            background: rgba(99, 102, 241, 0.25);
+            border-color: var(--accent);
+            transform: translateY(-1px);
+        }
+        .launch-contact svg {
+            width: 16px;
+            height: 16px;
+        }
+
+        /* ── Footer ── */
+        footer {
+            border-top: 1px solid var(--border);
+            padding: 28px 0;
+            text-align: center;
+        }
+        .footer-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+        .footer-left {
+            font-size: 13px;
+            color: var(--text-muted);
+        }
+        .footer-right {
+            display: flex;
+            gap: 20px;
+        }
+        .footer-right a {
+            font-size: 13px;
+            color: var(--text-muted);
+            text-decoration: none;
+            transition: color 0.2s;
+        }
+        .footer-right a:hover { color: var(--text-secondary); }
+
+        /* ── Patent ── */
+        .patent-line {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 11px;
+            color: var(--text-muted);
+            text-align: center;
+            margin-top: 12px;
+            letter-spacing: 0.3px;
+        }
+
+        /* ── Responsive ── */
+        @media (max-width: 700px) {
+            .signals { grid-template-columns: 1fr; }
+            .hero { padding: 60px 0 40px; }
+            .terminal-body { font-size: 11px; padding: 16px; }
+            .footer-row { justify-content: center; text-align: center; }
+        }
+    </style>
+</head>
+<body>
+    <div class="bg-grid"></div>
+    <div class="page">
+        <div class="container">
+            <nav>
+                <div class="logo">Plexur<span class="logo-dot"></span></div>
+                <span class="nav-badge">GA 1.0 — October 2026</span>
+            </nav>
+
+            <section class="hero">
+                <p class="hero-overline">The intelligence layer beneath enterprise platforms</p>
+                <h1>Know <span class="accent">what breaks</span><br>before you change it</h1>
+                <p class="hero-sub">Deterministic blast-radius analysis for Salesforce — parsed from actual code, not metadata guesses or LLM approximations.</p>
+            </section>
+
+            <section class="signals">
+                <div class="signal-card">
+                    <span class="signal-icon parse">PARSE</span>
+                    <h3>102 ANTLR Parsers</h3>
+                    <p>Every Salesforce metadata type — Apex, LWC, Flow, validation rules, fields, permission sets — parsed into typed ASTs.</p>
+                </div>
+                <div class="signal-card">
+                    <span class="signal-icon graph">GRAPH</span>
+                    <h3>Execution Graph</h3>
+                    <p>Neo4j-backed dependency graph built from real code paths. 150K+ nodes per enterprise org. Not metadata XML — actual execution flow.</p>
+                </div>
+                <div class="signal-card">
+                    <span class="signal-icon blast">BLAST</span>
+                    <h3>Blast Radius</h3>
+                    <p>Deterministic, confidence=1.0 impact analysis. Know exactly what breaks downstream — auditable, complete, no hallucinations.</p>
+                </div>
+            </section>
+
+            <section class="terminal-section">
+                <div class="terminal">
+                    <div class="terminal-bar">
+                        <span class="terminal-dot r"></span>
+                        <span class="terminal-dot y"></span>
+                        <span class="terminal-dot g"></span>
+                        <span class="terminal-title">plexur — blast radius query</span>
+                    </div>
+                    <div class="terminal-body">
+                        <div><span class="prompt">→</span> <span class="cmd">What breaks if I rename Account.Industry?</span></div>
+                        <div><span class="comment">  # querying execution graph... 3 hops, 12ms</span></div>
+                        <div>&nbsp;</div>
+                        <div><span class="result-crit">  ✗ AccountTrigger</span> <span class="comment">— direct field reference, line 47</span></div>
+                        <div><span class="result-crit">  ✗ LeadConversionFlow</span> <span class="comment">— assignment node reads Industry</span></div>
+                        <div><span class="result-warn">  ⚠ QuarterlyReportBatch</span> <span class="comment">— SOQL WHERE clause, line 112</span></div>
+                        <div><span class="result-warn">  ⚠ IndustryValidationRule</span> <span class="comment">— formula reference</span></div>
+                        <div><span class="result">  ✓ 4 components affected — blast radius: 4 — confidence: 1.0</span></div>
+                    </div>
+                </div>
+            </section>
+
+            <section class="surfaces">
+                <h2>Delivered where your teams already work</h2>
+                <div class="surface-row">
+                    <span class="surface-tag">Chrome Extension</span>
+                    <span class="surface-tag">Web Portal</span>
+                    <span class="surface-tag">MCP Server for AI Agents</span>
+                    <span class="surface-tag">Conversational AI (Axon)</span>
+                    <span class="surface-tag">Auto-Generated Docs (Clarity)</span>
+                </div>
+            </section>
+
+            <section class="launch">
+                <p class="launch-date">Pilots begin July 2026 · GA 1.0 October 2026</p>
+                <h2>Built for enterprise. Ready for agents.</h2>
+                <p>2 provisional patents · 71 claims · Covers any SaaS/iPaaS platform</p>
+                <a href="mailto:nagaraju@plexur.ai" class="launch-contact">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>
+                    nagaraju@plexur.ai
+                </a>
+            </section>
+
+            <footer>
+                <div class="footer-row">
+                    <span class="footer-left">© 2026 Plexur Inc. Florida C-Corp.</span>
+                    <div class="footer-right">
+                        <a href="https://www.linkedin.com/company/plexur" target="_blank">LinkedIn</a>
+                    </div>
+                </div>
+                <p class="patent-line">Patent Pending — USPTO 63/918,464 · 63/948,477</p>
+            </footer>
+        </div>
+    </div>
+</body>
+</html>
